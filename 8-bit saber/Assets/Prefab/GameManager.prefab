@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3009721856667801102
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5364780635141939195}
+  - component: {fileID: 6611045764421600199}
+  - component: {fileID: 6352919458913795631}
+  m_Layer: 0
+  m_Name: GameManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5364780635141939195
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3009721856667801102}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6611045764421600199
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3009721856667801102}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d854d9baf0f1eaf44aeef788de7f6fc6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  btn_play: {fileID: 0}
+  Note:
+  - {fileID: 2715438889017273994, guid: df262da6f6fb1804597bb83733c09093, type: 3}
+  - {fileID: 2715438889017273994, guid: 907070c0bdeaa3840a618df378ca1e85, type: 3}
+  perfectLine:
+  - {fileID: 0}
+  - {fileID: 0}
+  canTouch: 0
+--- !u!114 &6352919458913795631
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3009721856667801102}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6f237893115e624997e970da1fff546, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  baseAudioSource: {fileID: 0}
+  sheet:
+    music: {fileID: 0}
+    left: {fileID: 0}
+    right: {fileID: 0}
+    infoSound: {fileID: 0}
