@@ -6,12 +6,16 @@ using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
+    [SerializeField] private Text txt_msg;
+    [SerializeField] private Text txt_score;
     [SerializeField] private Button btn_play;
+    [SerializeField] private SongManager loadSound;
     [SerializeField] private GameObject[] Note;
     [SerializeField] private GameObject[] perfectLine;
     private Queue<GameObject>[] waitNote = new Queue<GameObject>[2];
     private GameObject[] lastInsertWait = new GameObject[2];
     private int speedNote = 4; //tốc độ note nhạc (1s đi đc 4 World X)
+    private float delayTime = 5;// sau delayTime giây, nhạc bắt đầu chạy
     private bool pause = true;
     private int score = 0;
     public bool canTouch = false;
@@ -38,7 +42,7 @@ public class GameManager : MonoBehaviour
         while (waitNote[1].TryDequeue(out temp)) GameObject.Destroy(temp);
         lastInsertWait[0] = null;
         lastInsertWait[1] = null;
-
+        loadSound.stop();
         createNewNote(0);
         createNewNote(1);
 
@@ -48,6 +52,7 @@ public class GameManager : MonoBehaviour
     void startGame()
     {
         pause = false;
+        StartCoroutine(PlayDelay());
     }
     // Update is called once per frame
     void Update()
@@ -69,9 +74,6 @@ public class GameManager : MonoBehaviour
                     if (Mathf.Abs(lastInsertWait[side].transform.position.x) < 10)
                         createNewNote(side);
                 }
-
-                
-
                 //qua vach perfect
                 if (waitNote[side].Count != 0)
                 {
@@ -91,18 +93,21 @@ public class GameManager : MonoBehaviour
             }
         }
     }
-
+    IEnumerator PlayDelay(){
+        yield return new  WaitForSeconds(delayTime);
+        loadSound.play();
+    }
     void createNewNote(int side)
     {
         GameObject nextNote;
         //Khi 2 bên không có note nhạc (ví dụ khi bắt đầu game)
         if (lastInsertWait[side] == null)
         {
-            float nextX = 3;
+            float nextX = delayTime+loadSound.loadNextSecond(side);
             if (nextX == -1) return;
             nextNote = Instantiate<GameObject>(Note[side]);
             nextNote.transform.position = new Vector3(
-                (5 + nextX * speedNote)*-Mathf.Pow(-1,side),
+                (nextX * speedNote +0.8f)*-Mathf.Pow(-1,side)+perfectLine[side].transform.position.x,
                 perfectLine[side].transform.position.y,
                 0
             );
@@ -110,7 +115,7 @@ public class GameManager : MonoBehaviour
         //Ngược lại: thêm ở note nhạc tiếp theo
         else
         {
-            float nextX = 3;// note tiếp theo sẽ xuất hiện sau nextX second (ví dụ: 3s xuất hiện 1 note nhạc)
+            float nextX = loadSound.loadNextSecond(side);// note tiếp theo sẽ xuất hiện sau nextX second (ví dụ: 3s xuất hiện 1 note nhạc)
             if (nextX == -1) return;
             else
             {
@@ -129,14 +134,17 @@ public class GameManager : MonoBehaviour
     void ClickNote(int side)
     {
         //TODO: chưa xử lý perfect, early, later, miss, non-miss
-        GameObject.Destroy(waitNote[side].Dequeue());
-        setScore(score + 1);
+        if(Physics2D.OverlapPoint(perfectLine[side].transform.position) !=null){
+            Perfect(side);
+        }else{
+            nonMiss();
+        }
     }
     //điểm
     void setScore(int score)
     {
         this.score = score;
-        Debug.Log(score);
+        txt_score.text = ""+score;
     }
     //cập nhập vị trí note nhạc 
     void updatePosNote()
@@ -148,7 +156,9 @@ public class GameManager : MonoBehaviour
     }
     //khi note nhạc đc chs hoàn hảo
     void Perfect(int side){
-
+        showMSG("Perfect");
+        GameObject.Destroy(waitNote[side].Dequeue());
+        setScore(score + 100);
     }
     //khi note nhạc đc chs sớm 1 chút
     void Early(int side){
@@ -161,7 +171,7 @@ public class GameManager : MonoBehaviour
     //khi ko bấm note nhạc 
     void Miss(int side){
         GameObject.Destroy(waitNote[side].Dequeue());
-        Debug.Log("Miss");
+        showMSG("Miss");
     }
     //khi bấm nhưng ko có note nhạc nào
     void nonMiss(){
@@ -170,6 +180,7 @@ public class GameManager : MonoBehaviour
     //Thua
     void Lose()
     {
+        loadSound.pause();
         pause = true;
         canTouch = false;
         showMSG("You Lose!");
@@ -187,6 +198,7 @@ public class GameManager : MonoBehaviour
     //hiện thông báo
     void showMSG(string txt)
     {
+        txt_msg.text=txt;
         Debug.Log(txt);
         // panel_msg.SetActive(true);
         // txt_msg.GetComponent<UnityEngine.UI.Text>().text = txt;
