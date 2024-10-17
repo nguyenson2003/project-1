@@ -1,17 +1,22 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
     [SerializeField] private Text txt_msg;
+    [SerializeField] private GameObject canvas;
+    [SerializeField] private Text txt_status;
     [SerializeField] private Text txt_score;
     [SerializeField] private Button btn_play;
     [SerializeField] private SongManager loadSound;
     [SerializeField] private GameObject[] Note;
     [SerializeField] private GameObject[] perfectLine;
+    public int scoreWhenPerfect, scoreWhenEarly, scoreWhenLate;
+    public float perfectThreshold, earlyThreshold, lateThreshold;
     private Queue<GameObject>[] waitNote = new Queue<GameObject>[2];
     private GameObject[] lastInsertWait = new GameObject[2];
     private int speedNote = 4; //tốc độ note nhạc (1s đi đc 4 World X)
@@ -60,13 +65,16 @@ public class GameManager : MonoBehaviour
         if (pause == false)
         {
             updatePosNote();
-            if(Input.GetKeyDown(KeyCode.F)){
+            if (Input.GetKeyDown(KeyCode.F))
+            {
                 ClickNote(0);
             }
-            if(Input.GetKeyDown(KeyCode.J)){
+            if (Input.GetKeyDown(KeyCode.J))
+            {
                 ClickNote(1);
             }
-            for(int side=0;side<2;side++){
+            for (int side = 0; side < 2; side++)
+            {
                 //nếu chưa hết nhạc
                 if (lastInsertWait[side] != null)
                 {
@@ -77,9 +85,10 @@ public class GameManager : MonoBehaviour
                 //qua vach perfect
                 if (waitNote[side].Count != 0)
                 {
-                    if (Mathf.Abs(waitNote[side].Peek().transform.position.x)+Note[side].GetComponent<CircleCollider2D>().radius< Mathf.Abs(perfectLine[side].transform.position.x)
-                    
-                    ){
+                    if (Mathf.Abs(waitNote[side].Peek().transform.position.x) + Note[side].GetComponent<CircleCollider2D>().radius < Mathf.Abs(perfectLine[side].transform.position.x)
+
+                    )
+                    {
                         Miss(side);
                     }
                 }
@@ -93,8 +102,9 @@ public class GameManager : MonoBehaviour
             }
         }
     }
-    IEnumerator PlayDelay(){
-        yield return new  WaitForSeconds(delayTime);
+    IEnumerator PlayDelay()
+    {
+        yield return new WaitForSeconds(delayTime);
         loadSound.play();
     }
     void createNewNote(int side)
@@ -103,11 +113,11 @@ public class GameManager : MonoBehaviour
         //Khi 2 bên không có note nhạc (ví dụ khi bắt đầu game)
         if (lastInsertWait[side] == null)
         {
-            float nextX = delayTime+loadSound.loadNextSecond(side);
+            float nextX = delayTime + loadSound.loadNextSecond(side);
             if (nextX == -1) return;
             nextNote = Instantiate<GameObject>(Note[side]);
             nextNote.transform.position = new Vector3(
-                (nextX * speedNote +0.8f)*-Mathf.Pow(-1,side)+perfectLine[side].transform.position.x,
+                (nextX * speedNote + 0.8f) * -Mathf.Pow(-1, side) + perfectLine[side].transform.position.x,
                 perfectLine[side].transform.position.y,
                 0
             );
@@ -121,7 +131,7 @@ public class GameManager : MonoBehaviour
             {
                 nextNote = Instantiate<GameObject>(Note[side]);
                 nextNote.transform.position = new Vector3(
-                    lastInsertWait[side].transform.position.x + nextX * speedNote *-Mathf.Pow(-1,side),
+                    lastInsertWait[side].transform.position.x + nextX * speedNote * -Mathf.Pow(-1, side),
                     perfectLine[side].transform.position.y,
                     0
                 );
@@ -133,10 +143,25 @@ public class GameManager : MonoBehaviour
     //ấn vào nốt nhạc
     void ClickNote(int side)
     {
-        //TODO: chưa xử lý perfect, early, later, miss, non-miss
-        if(Physics2D.OverlapPoint(perfectLine[side].transform.position) !=null){
+        //TODO: chưa xử lý perfect, early, late, miss, non-miss
+        // còn bao xa mới tới perfect point
+        if(!waitNote[side].Peek()) return;
+        float distanceToPerfect = (waitNote[side].Peek().transform.position.x - perfectLine[side].transform.position.x) * (side == 0 ? -1 : 1);
+        Debug.Log(" "+distanceToPerfect+" ");
+        if (-perfectThreshold < distanceToPerfect && distanceToPerfect < perfectThreshold)
+        {
             Perfect(side);
-        }else{
+        }
+        else if (perfectThreshold <= distanceToPerfect && distanceToPerfect <= earlyThreshold)
+        {
+            Early(side);
+        }
+        else if (lateThreshold <= distanceToPerfect && distanceToPerfect <= -perfectThreshold)
+        {
+            Late(side);
+        }
+        else
+        {
             nonMiss();
         }
     }
@@ -144,37 +169,52 @@ public class GameManager : MonoBehaviour
     void setScore(int score)
     {
         this.score = score;
-        txt_score.text = ""+score;
+        txt_score.text = "" + score;
     }
     //cập nhập vị trí note nhạc 
     void updatePosNote()
     {
+        // Debug.Log(waitNote[0].Count);
         foreach (var item in waitNote[0])
             item.transform.position += new Vector3(+speedNote * Time.deltaTime, 0, 0);
         foreach (var item in waitNote[1])
             item.transform.position += new Vector3(-speedNote * Time.deltaTime, 0, 0);
     }
     //khi note nhạc đc chs hoàn hảo
-    void Perfect(int side){
+    void Perfect(int side)
+    {
         showMSG("Perfect");
+        ShowFloatingText("Perfect", perfectLine[side].transform.position);
         GameObject.Destroy(waitNote[side].Dequeue());
-        setScore(score + 100);
+        setScore(score + scoreWhenPerfect);
     }
     //khi note nhạc đc chs sớm 1 chút
-    void Early(int side){
+    void Early(int side)
+    {
+        showMSG("Early");
+        ShowFloatingText("Early", perfectLine[side].transform.position);
 
+        GameObject.Destroy(waitNote[side].Dequeue());
+        setScore(score + scoreWhenEarly);
     }
     //khi note nhạc đc chs muộn 1 chút
-    void Later(int side){
-
+    void Late(int side)
+    {
+        showMSG("Late");
+        ShowFloatingText("Late", perfectLine[side].transform.position);
+        GameObject.Destroy(waitNote[side].Dequeue());
+        setScore(score + scoreWhenLate);
     }
     //khi ko bấm note nhạc 
-    void Miss(int side){
+    void Miss(int side)
+    {
+        ShowFloatingText("Miss", perfectLine[side].transform.position);
         GameObject.Destroy(waitNote[side].Dequeue());
         showMSG("Miss");
     }
     //khi bấm nhưng ko có note nhạc nào
-    void nonMiss(){
+    void nonMiss()
+    {
 
     }
     //Thua
@@ -198,9 +238,33 @@ public class GameManager : MonoBehaviour
     //hiện thông báo
     void showMSG(string txt)
     {
-        txt_msg.text=txt;
-        Debug.Log(txt);
-        // panel_msg.SetActive(true);
-        // txt_msg.GetComponent<UnityEngine.UI.Text>().text = txt;
+        txt_msg.text = txt;
+        // Debug.Log(txt);
+    }
+
+    public void ShowFloatingText(string message, Vector3 position, Color color = new Color(), float startYOffset = 1f, float floatSpeed = 1f, float fadeDuration = 1f)
+    {
+        if (color.Equals(new Color())) color = new Color(1, 0, 0, 1);
+        Text textObj = Instantiate(txt_status, position, Quaternion.identity, canvas.transform);
+        textObj.text = message;
+        textObj.color = color;
+
+        Color textColor = textObj.color; // Lưu màu ban đầu
+        textObj.transform.position += new Vector3(0, startYOffset, 0); // Đặt độ cao ban đầu
+        StartCoroutine(FloatingAndFading(textObj, textColor, floatSpeed, fadeDuration));
+    }
+    IEnumerator FloatingAndFading(Text textObj, Color textColor, float floatSpeed, float fadeDuration)
+    {
+        float elapsedTime = 0;
+        while (elapsedTime < fadeDuration)
+        {
+            textObj.transform.position += new Vector3(0, floatSpeed * Time.deltaTime, 0);
+            float alpha = Mathf.Lerp(1, 0, elapsedTime / fadeDuration);
+            textColor.a = alpha;
+            textObj.color = textColor;
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+        Destroy(textObj.gameObject);
     }
 }
